@@ -65,7 +65,7 @@ python3 --version
 ## Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
+git clone https://github.com/ethder00895/GlobalDataVisualization.git
 cd YOUR_REPOSITORY
 ```
 
@@ -110,7 +110,7 @@ The dashboard loads CSV files through JavaScript and must be served through a lo
 Navigate to the project root folder:
 
 ```bash
-cd YOUR_REPOSITORY
+cd PROJECT_ROOT_FOLDER
 ```
 
 Start a local Python web server:
@@ -132,30 +132,6 @@ http://localhost:8000
 ```
 
 The dashboard should now load successfully.
-
----
-
-## Running the JupyterLab
-
-Launch JupyterLab:
-
-```bash
-jupyter notebook
-```
-
-Open:
-
-```text
-data_exploration.ipynb
-```
-
-The notebook contains:
-
-- Data cleaning
-- Exploratory Data Analysis (EDA)
-- Missing value analysis
-- Statistical summaries
-- Validation of dashboard metrics
 
 ---
 
