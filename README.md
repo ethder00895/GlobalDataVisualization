@@ -1,6 +1,10 @@
 # GlobalDataVisualization
 
 Interactive D3.js dashboard exploring global sustainable energy trends from 2000–2020 across 176 countries.
+![Task 2 Visualization](preprocessing/image_task2.png)
+<p align="center">
+  <img src="preprocessing/image_task2.png" width="600">
+</p>
 
 The dashboard provides insights into:
 
@@ -31,10 +35,9 @@ project-folder/
 │
 ├── preprocessing/
 │   └── data_exploration.ipynb
+│   └── image_task2.png
 │   └── requirements.txt
 │
-├── data_exploration.ipynb
-├── requirements.txt
 ├── README.md
 └── LICENSE
 ```
