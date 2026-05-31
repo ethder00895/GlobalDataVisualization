@@ -244,6 +244,16 @@ http://localhost:8080
 
 ---
 
+## Live Demo
+
+The dashboard is publicly available through GitHub Pages.
+
+Open the project directly in your browser:
+
+```text
+https://ethder00895.github.io/GlobalDataVisualization/
+```
+
 ## License
 
 This project is distributed under the terms described in the LICENSE file.
