@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Global Sustainable Energy Dashboard — UC3DVS10</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson.min.js"></script> -->
+  <script src="./libs/topojson-client.min.js"></script>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header class="dashboard-header">
+  <div class="header-title">
+    <h1>Global Sustainable Energy Trends (2000–2020)  </h1>
+    <p>Energy access &middot; Renewables &middot; CO&thinsp;2 emissions &nbsp;&middot;&nbsp; 176 countries &middot; 2000&ndash;2020</p>
+  </div>
+
+  <div class="global-filters">
+    <div class="filter-group">
+      <label for="yearStart">Year</label>
+      <div class="range-inputs">
+        <input type="number" id="yearStart" min="2000" max="2020" value="2000">
+        <span>&ndash;</span>
+        <input type="number" id="yearEnd"   min="2000" max="2020" value="2020">
+      </div>
+    </div>
+    <div class="filter-group">
+      <label for="regionFilter">Region</label>
+      <select id="regionFilter">
+        <option value="all">All regions</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="mapMetric">Map metric</label>
+      <select id="mapMetric">
+        <option value="Renewable energy share in the total final energy consumption (%)">Renewable Share %</option>
+        <option value="Access to electricity (% of population)">Electricity Access %</option>
+        <option value="Low-carbon electricity (% electricity)">Low-carbon Elec. %</option>
+        <option value="Value_co2_emissions_kt_by_country">CO2 Emissions (kt)</option>
+        <option value="gdp_per_capita">GDP per Capita</option>
+      </select>
+    </div>
+    <div class="filter-group filter-group--reset">
+      <button id="resetBtn" class="reset-btn">Reset all</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     KPI BAR
+     ============================================================ -->
+<div class="kpi-bar">
+  <div class="kpi-card">
+    <div class="kpi-label">Countries tracked</div>
+    <div class="kpi-value sky" id="kpiCountries">--</div>
+    <div class="kpi-sub">in selected range</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Avg. electricity access</div>
+    <div class="kpi-value emerald" id="kpiAccess">--%</div>
+    <div class="kpi-sub">of population</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Avg. renewable share</div>
+    <div class="kpi-value amber" id="kpiRenewable">--%</div>
+    <div class="kpi-sub">of final energy consumption</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Avg. CO2 emissions</div>
+    <div class="kpi-value red" id="kpiCo2">-- kt</div>
+    <div class="kpi-sub">per country (kilotonnes)</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Avg. GDP per capita</div>
+    <div class="kpi-value violet" id="kpiGdp">--</div>
+    <div class="kpi-sub">USD, latest year</div>
+  </div>
+</div>
+
+<!-- ============================================================
+     BODY: SIDEBAR + VIZ AREA
+     ============================================================ -->
+<div class="dashboard-body">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Select country</div>
+      <input class="country-search" id="countrySearch" type="text" placeholder="Search country...">
+      <ul class="country-list" id="countryList"></ul>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Country detail</div>
+      <div id="countryCard">
+        <p class="no-selection">Click a country on the map or in the list above to see its latest statistics.</p>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- VIZ AREA -->
+  <main class="viz-area" id="vizArea">
+
+    <!-- 1. Choropleth world map -->
+    <section class="chart-panel wide">
+      <div class="panel-header">
+        <div class="panel-title-row">
+          <h2>World Map &mdash; Selected Metric by Country</h2>
+          <span class="panel-badge" id="mapBadge">Avg 2000&ndash;2020</span>
+        </div>
+        <p class="panel-desc">
+          Each country is shaded by the average value of the metric chosen in the header filter, averaged
+          across the selected year range. Countries with no data appear as light grey. Click any country
+          to populate the sidebar with its latest statistics and highlight it across all charts.
+          <strong>Insight:</strong> Northern Europe, North America, and Oceania consistently show high
+          electricity access and growing renewable shares, while sub-Saharan Africa lags behind on access
+          but many nations already derive most energy from renewables (hydro-dominated grids).
+        </p>
+      </div>
+      <div class="chart-wrap" id="worldMap" style="height:660px;"></div>
+      <div class="panel-annotation" id="mapAnnotation">
+        Colour scale: sequential, darker = higher value &nbsp;&middot;&nbsp; Grey = no data available &nbsp;&middot;&nbsp; Use header filters to change metric and year range
+      </div>
+    </section>
+
+    <!-- 2. Line chart: Global renewable share trend -->
+    <section class="chart-panel">
+      <div class="panel-header">
+        <div class="panel-title-row">
+          <h2>Global Renewable Energy Share</h2>
+          <span class="panel-badge">2000&ndash;2020 trend</span>
+        </div>
+        <p class="panel-desc">
+          Global average share of renewables in total final energy consumption, year by year.
+          An upward trajectory signals structural progress in the energy transition.
+          The highlighted point marks the year the trend inflected most sharply.
+        </p>
+      </div>
+      <div class="chart-wrap" id="lineChart" style="height:460px;"></div>
+      <div class="panel-annotation" id="lineAnnotation">
+        Source: renewable energy share (%) averaged across all reporting countries per year &nbsp;&middot;&nbsp; Missing-data years excluded from average
+      </div>
+    </section>
+
+    <!-- 3. Stacked area: electricity generation mix -->
+    <section class="chart-panel">
+      <div class="panel-header">
+        <div class="panel-title-row">
+          <h2 id="areaChartTitle">Global Electricity Generation Mix</h2>
+          <span class="panel-badge">TWh per year</span>
+        </div>
+        <p class="panel-desc">
+          Stacked area chart showing total electricity output (terawatt-hours) split by source:
+          fossil fuels (amber), nuclear (blue), and renewables (green). The growing green band
+          after 2010 reflects the rapid scale-up of solar and wind capacity worldwide.
+        </p>
+      </div>
+      <div class="chart-wrap" id="areaChart" style="height:460px;"></div>
+      <div class="panel-annotation" id="areaAnnotation">
+        TWh = terawatt-hours &nbsp;&middot;&nbsp; Stacked totals summed across all reporting countries per year
+      </div>
+    </section>
+
+    <!-- 4. Scatter: GDP per capita vs renewable share -->
+    <section class="chart-panel">
+      <div class="panel-header">
+        <div class="panel-title-row">
+          <h2>GDP per Capita vs. Renewable Share</h2>
+          <span class="panel-badge" id="scatterBadge">Latest year</span>
+        </div>
+        <p class="panel-desc">
+          Each circle represents one country. Position encodes GDP per capita (x-axis) and
+          renewable energy share (y-axis). Circle colour identifies the region. A common
+          pattern is a U-shaped relationship: very poor and very rich countries both have high
+          renewable shares (hydro-dependent developing nations and tech-advanced economies),
+          while middle-income fossil-fuel economies cluster in the lower-middle range.
+        </p>
+      </div>
+      <div class="chart-wrap" id="scatterChart" style="height:480px;"></div>
+      <div class="panel-annotation" id="scatterAnnotation">
+        Hover circles to see country name &nbsp;&middot;&nbsp; Selected country highlighted in amber &nbsp;&middot;&nbsp; Data: latest available year per country in selected range
+      </div>
+    </section>
+
+    <!-- 5. Bar chart: top 10 countries by CO2 -->
+    <section class="chart-panel">
+      <div class="panel-header">
+        <div class="panel-title-row">
+          <h2>Top 10 CO&#8322;-Emitting Countries</h2>
+          <span class="panel-badge" id="barBadge">Avg 2000&ndash;2020</span>
+        </div>
+        <p class="panel-desc">
+          Horizontal bar chart ranking the ten countries with the highest average CO&#8322;
+          emissions (kilotonnes) over the selected period. The list reflects long-term
+          structural emitters &mdash; typically large-population nations or economies with heavy
+          reliance on fossil fuels.
+          If a specific country is selected elsewhere in the dashboard, it is
+          <strong>highlighted in amber</strong> when it appears in the top&nbsp;10. If the
+          selected country falls outside the top&nbsp;10, it is appended as an additional bar
+          below the ranking (separated by a dashed line) to allow direct comparison with the
+          major emitters.
+        </p>
+      </div>
+      <div class="chart-wrap" id="barChart" style="height:540px;"></div>
+      <div class="panel-annotation" id="barAnnotation">
+        CO2 values in kilotonnes (kt) &nbsp;&middot;&nbsp; Averaged across selected year range &nbsp;&middot;&nbsp; Countries with all-null data excluded
+      </div>
+    </section>
+
+    <!-- 6. Data table -->
+    <section class="chart-panel wide">
+      <div class="panel-header panel-header--accent">
+        <div class="panel-title-row">
+          <h2>Country Data Table</h2>
+          <span class="panel-badge" id="tableCount">-- countries</span>
+        </div>
+        <p class="panel-desc">
+          Tabular summary of key indicators per country, using the latest available year within
+          the selected range. Click a column header to sort ascending or descending. Click any
+          row to select that country and update the sidebar and highlighted elements across all
+          charts above. This table supports precise comparison that charts cannot always convey.
+        </p>
+      </div>
+      <div class="table-wrap" id="dataTable" style="height:340px;"></div>
+      <div class="panel-annotation">
+        Latest available year per country within the selected year range &nbsp;&middot;&nbsp; Click a column header to sort &nbsp;&middot;&nbsp; Click a row to select country
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Submission footer -->
+<footer class="submission-footer">
+  <div class="footer-item">
+    <span class="footer-label">Project</span>
+    <span class="footer-value"><strong>Global Sustainable Energy Dashboard</strong></span>
+  </div>
+  <div class="footer-item">
+    <span class="footer-label">Data Source</span>
+    <span class="footer-value">
+      <em>Global Data on Sustainable Energy (2000&ndash;2020)</em><br>
+    </span>
+  </div>
+  <div class="footer-item">
+    <span class="footer-label">Submitted by</span>
+    <span class="footer-value"><strong>Ethelbert Derige | ADS3</strong></span>
+  </div>
+  <div class="footer-item">
+    <span class="footer-label">Course</span>
+    <span class="footer-value">
+      UC3DVS10 &mdash; Data Visualisation<br>
+      <span class="footer-sub">Assessment 3 &middot; Task 2 &middot; Noroff University College</span>
+    </span>
+  </div>
+</footer>
+
+<!-- Tooltip -->
+<div id="tooltip" class="tooltip" style="display:none;"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
